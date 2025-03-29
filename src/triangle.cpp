@@ -53,21 +53,6 @@ int main()
 
     // CREATING A TRIANGLE ---------------------------------------------------------------------------------------------------------------
 
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
-    };  
-    unsigned int VBO;
-    glGenBuffers(1, &VBO); // Generates 1 buffer and writes the id of it to VBO
-    std::cout << VBO << std::endl; 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); // Binds the buffer id VBO to a GL_ARRAY_BUFFER target - which is a vertex buffer object
-    // GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
-    // GL_STATIC_DRAW: the data is set only once and used many times.
-    // GL_DYNAMIC_DRAW: the data is changed a lot and used many times.
-    // Triangle vertices dont change, used a lot, stays same for every render call son we use static draw
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copies vertex data into the buffer - currently bound to VBO
-
     // VERTEX SHADER - takes vertices and normalsies the 3d coordinates
     // Premade shader - simplest possible. Simply take the input and send to output gl_Position:     (Normally, we have to normalise first)
     const char *vertexShaderSource = "#version 330 core\n"
@@ -126,9 +111,30 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);  
 
+    // Create VAO - which saves a configuration to draw when used
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO); // unsure exactly how this works in relation to vbo?
+
+    float vertices[] = {
+        -0.5f, -0.5f, 0.0f,
+         0.5f, -0.5f, 0.0f,
+         0.0f,  0.5f, 0.0f
+    };  
+    unsigned int VBO;
+    glGenBuffers(1, &VBO); // Generates 1 buffer and writes the id of it to VBO
+    glBindBuffer(GL_ARRAY_BUFFER, VBO); // Binds the buffer id VBO to a GL_ARRAY_BUFFER target - which is a vertex buffer object
+    // GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
+    // GL_STATIC_DRAW: the data is set only once and used many times.
+    // GL_DYNAMIC_DRAW: the data is changed a lot and used many times.
+    // Triangle vertices dont change, used a lot, stays same for every render call son we use static draw
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Copies vertex data into the buffer - currently bound to VBO
+
     // Tell opengl how to interperet the vertex data:
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // Vertex to configure (we specified location = 0 in the shader), size (vec3 so 3 values), data type, dont normalise, stride (space between consecutive verctices), offset data begins in buffer.
     glad_glEnableVertexAttribArray(0); // Location as argument
+
+    glBindVertexArray(0); // Unbind VAO
 
     // ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -141,6 +147,10 @@ int main()
         // Sets the clear colour, then clears it with that colour
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        // Render triangle
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();    
